@@ -46,8 +46,8 @@
   const boardStage = document.querySelector('.board-stage');
   const toast = document.querySelector('#toast');
   let game = loadGame();
-  let selectedIndex = null;
-  let dragIndex = null;
+  let activeDrag = null;
+  let keyboardDrag = null;
   let toastTimeout;
   let feedbackTimeout;
   let hintTimeout;
@@ -118,6 +118,8 @@
   }
 
   function render() {
+    cancelPointerDrag();
+    cancelKeyboardDrag();
     const size = levels[game.level];
     const tiles = game.tiles;
     const sceneKey = game.scene;
@@ -131,7 +133,6 @@
     board.classList.toggle('is-complete', game.complete);
     board.classList.remove('show-reference');
     document.querySelector('#preview-button').setAttribute('aria-pressed', 'false');
-    selectedIndex = null;
     completeMessage.hidden = !game.complete;
 
     tiles.forEach((originalIndex, position) => {
@@ -222,15 +223,11 @@
     updateTimer();
   }
 
-  function swapPieces(first, second) {
+  function movePieces(first, second) {
     if (first === second || !game.tiles.length || game.complete) return;
-    const wasCorrectAtFirst = game.tiles[first] === first;
-    const wasCorrectAtSecond = game.tiles[second] === second;
     [game.tiles[first], game.tiles[second]] = [game.tiles[second], game.tiles[first]];
     game.moves += 1;
-    const correctAtFirst = game.tiles[first] === first;
-    const correctAtSecond = game.tiles[second] === second;
-    const newlyCorrect = (!wasCorrectAtFirst && correctAtFirst) || (!wasCorrectAtSecond && correctAtSecond);
+    const placedCorrectly = game.tiles[second] === second;
     hintPositions = null;
     wrongPositions = [first, second].filter((position) => game.tiles[position] !== position);
 
@@ -246,10 +243,10 @@
       return;
     }
     render();
-    if (wrongPositions.length) {
-      showToast(newlyCorrect ? 'A piece found its place. Try again!' : 'Try again!', 'error');
-    } else if (newlyCorrect) {
+    if (placedCorrectly) {
       showToast('A piece found its place.', 'success');
+    } else {
+      showToast('Not quite — try another space.', 'error');
     }
     clearTimeout(feedbackTimeout);
     feedbackTimeout = setTimeout(() => {
@@ -258,17 +255,69 @@
     }, 1400);
   }
 
-  function choosePiece(position) {
-    if (!game.tiles.length || game.complete) return;
-    if (selectedIndex === null) {
-      selectedIndex = position;
-      board.children[position].classList.add('is-selected');
-      return;
+  function cancelPointerDrag() {
+    if (!activeDrag) return;
+    const drag = activeDrag;
+    activeDrag = null;
+    drag.piece.classList.remove('is-dragging');
+    drag.ghost.remove();
+    if (board.hasPointerCapture(drag.pointerId)) board.releasePointerCapture(drag.pointerId);
+  }
+
+  function cancelKeyboardDrag() {
+    if (!keyboardDrag) return;
+    const source = board.children[keyboardDrag.origin];
+    source?.classList.remove('is-keyboard-dragging');
+    board.children[keyboardDrag.destination]?.classList.remove('is-keyboard-target');
+    if (source && game.tiles.length) {
+      const originalIndex = game.tiles[keyboardDrag.origin];
+      source.setAttribute(
+        'aria-label',
+        `Piece for space ${originalIndex + 1}, currently in space ${keyboardDrag.origin + 1}${originalIndex === keyboardDrag.origin ? ', correctly placed' : ''}`
+      );
     }
-    const previous = selectedIndex;
-    selectedIndex = null;
-    board.children[previous]?.classList.remove('is-selected');
-    if (previous !== position) swapPieces(previous, position);
+    keyboardDrag = null;
+  }
+
+  function updateKeyboardDestination(destination) {
+    if (!keyboardDrag || destination < 0 || destination >= game.tiles.length) return;
+    board.children[keyboardDrag.destination]?.classList.remove('is-keyboard-target');
+    keyboardDrag.destination = destination;
+    board.children[destination]?.classList.add('is-keyboard-target');
+    const originalIndex = game.tiles[keyboardDrag.origin];
+    board.children[keyboardDrag.origin]?.setAttribute(
+      'aria-label',
+      `Picked up piece for space ${originalIndex + 1}. Destination space ${destination + 1}.`
+    );
+  }
+
+  function finishKeyboardDrag() {
+    if (!keyboardDrag) return;
+    const { origin, destination } = keyboardDrag;
+    cancelKeyboardDrag();
+    if (origin !== destination) movePieces(origin, destination);
+    else showToast('Piece returned to its space.');
+    board.children[destination]?.focus();
+  }
+
+  function getDropPosition(clientX, clientY) {
+    const boardBounds = board.getBoundingClientRect();
+    if (clientX < boardBounds.left || clientX > boardBounds.right ||
+        clientY < boardBounds.top || clientY > boardBounds.bottom) return null;
+
+    let nearestPosition = null;
+    let nearestDistance = Infinity;
+    Array.from(board.children).forEach((piece, position) => {
+      const bounds = piece.getBoundingClientRect();
+      const deltaX = clientX - (bounds.left + bounds.width / 2);
+      const deltaY = clientY - (bounds.top + bounds.height / 2);
+      const distance = deltaX * deltaX + deltaY * deltaY;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestPosition = position;
+      }
+    });
+    return nearestPosition;
   }
 
   function showToast(message, kind = '') {
@@ -333,39 +382,114 @@
 
   board.addEventListener('pointerdown', (event) => {
     const piece = event.target.closest('.puzzle-piece');
-    if (!piece || game.complete || !game.tiles.length) return;
-    dragIndex = Number(piece.dataset.position);
+    if (!piece || game.complete || !game.tiles.length || activeDrag ||
+        event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    cancelKeyboardDrag();
+    event.preventDefault();
+    const bounds = piece.getBoundingClientRect();
+    const ghost = piece.cloneNode(false);
+    ghost.classList.remove('is-correct', 'is-wrong', 'hint-source', 'hint-target');
+    ghost.classList.add('is-drag-ghost');
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.removeAttribute('role');
+    ghost.tabIndex = -1;
+    ghost.style.width = `${bounds.width}px`;
+    ghost.style.height = `${bounds.height}px`;
+    ghost.style.left = '0';
+    ghost.style.top = '0';
+    document.body.append(ghost);
+    activeDrag = {
+      pointerId: event.pointerId,
+      origin: Number(piece.dataset.position),
+      piece,
+      ghost,
+      offsetX: event.clientX - bounds.left,
+      offsetY: event.clientY - bounds.top
+    };
     piece.classList.add('is-dragging');
+    ghost.style.transform = `translate3d(${event.clientX - activeDrag.offsetX}px, ${event.clientY - activeDrag.offsetY}px, 0)`;
+    board.setPointerCapture(event.pointerId);
+  });
+
+  board.addEventListener('pointermove', (event) => {
+    if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
+    event.preventDefault();
+    activeDrag.ghost.style.transform =
+      `translate3d(${event.clientX - activeDrag.offsetX}px, ${event.clientY - activeDrag.offsetY}px, 0)`;
   });
 
   board.addEventListener('pointerup', (event) => {
-    if (dragIndex === null) return;
-    const piece = event.target.closest('.puzzle-piece');
-    const origin = dragIndex;
-    board.children[origin]?.classList.remove('is-dragging');
-    dragIndex = null;
-    if (!piece) return;
-    const destination = Number(piece.dataset.position);
-    if (destination !== origin) swapPieces(origin, destination);
-    else choosePiece(destination);
+    if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
+    const { origin } = activeDrag;
+    const destination = getDropPosition(event.clientX, event.clientY);
+    cancelPointerDrag();
+    if (destination === null) {
+      showToast('Piece returned to its space.');
+    } else if (destination !== origin) {
+      movePieces(origin, destination);
+    }
   });
 
-  board.addEventListener('pointercancel', () => {
-    if (dragIndex !== null) board.children[dragIndex]?.classList.remove('is-dragging');
-    dragIndex = null;
+  board.addEventListener('pointercancel', (event) => {
+    if (activeDrag?.pointerId === event.pointerId) cancelPointerDrag();
   });
 
-  document.addEventListener('pointerup', (event) => {
-    if (dragIndex === null || board.contains(event.target)) return;
-    board.children[dragIndex]?.classList.remove('is-dragging');
-    dragIndex = null;
+  board.addEventListener('lostpointercapture', (event) => {
+    if (activeDrag?.pointerId === event.pointerId) cancelPointerDrag();
   });
 
   board.addEventListener('keydown', (event) => {
     const piece = event.target.closest('.puzzle-piece');
-    if (!piece || !['Enter', ' '].includes(event.key)) return;
-    event.preventDefault();
-    choosePiece(Number(piece.dataset.position));
+    if (!piece || !game.tiles.length || game.complete) return;
+    const position = Number(piece.dataset.position);
+    const size = levels[game.level];
+    const movement = {
+      ArrowLeft: position % size > 0 ? position - 1 : position,
+      ArrowRight: position % size < size - 1 ? position + 1 : position,
+      ArrowUp: position >= size ? position - size : position,
+      ArrowDown: position < game.tiles.length - size ? position + size : position
+    };
+
+    if (keyboardDrag && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+      event.preventDefault();
+      const { destination } = keyboardDrag;
+      const nextDestination = {
+        ArrowLeft: destination % size > 0 ? destination - 1 : destination,
+        ArrowRight: destination % size < size - 1 ? destination + 1 : destination,
+        ArrowUp: destination >= size ? destination - size : destination,
+        ArrowDown: destination < game.tiles.length - size ? destination + size : destination
+      }[event.key];
+      updateKeyboardDestination(nextDestination);
+      return;
+    }
+
+    if (['Enter', ' '].includes(event.key)) {
+      event.preventDefault();
+      if (keyboardDrag) {
+        finishKeyboardDrag();
+      } else {
+        const originalIndex = game.tiles[position];
+        keyboardDrag = { origin: position, destination: position };
+        piece.classList.add('is-keyboard-dragging', 'is-keyboard-target');
+        piece.setAttribute('aria-label', `Picked up piece for space ${originalIndex + 1}. Use arrow keys to choose a destination, then press Enter or Space to drop. Press Escape to cancel.`);
+        showToast('Piece picked up. Choose a destination with the arrow keys.');
+      }
+      return;
+    }
+
+    if (event.key === 'Escape' && keyboardDrag) {
+      event.preventDefault();
+      const origin = keyboardDrag.origin;
+      cancelKeyboardDrag();
+      board.children[origin]?.focus();
+      showToast('Move cancelled.');
+      return;
+    }
+
+    if (!keyboardDrag && movement[event.key] !== undefined && movement[event.key] !== position) {
+      event.preventDefault();
+      board.children[movement[event.key]]?.focus();
+    }
   });
 
   document.querySelector('#preview-button').addEventListener('click', () => {
