@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173d31">
+  <meta name="description" content="Take a breath and piece together a little wilderness. Play a nature-inspired jigsaw puzzle with Wildscape.">
+  <title>Wildscape — Find your quiet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Wildscape home">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 27V14m0 8c-5-1-8-4-8-9 5 0 8 3 8 9Zm0-5c0-6 3-10 9-11 0 6-3 10-9 11Z"/></svg></span>
+      <span>WILDSCAPE</span>
+    </a>
+    <nav class="top-nav" aria-label="Main navigation">
+      <a href="#puzzle">The puzzle</a>
+      <a href="#collection">Collection</a>
+    </nav>
+    <a class="header-note" href="#puzzle"><span class="live-dot"></span> Your daily pause</a>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <img class="hero-photo" src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=2000&q=88" alt="Sunlight falling through a quiet evergreen forest">
+      <div class="hero-shade"></div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-line"></span> A LITTLE ROOM TO BREATHE</p>
+        <h1 id="hero-title">Find your <em>quiet.</em></h1>
+        <p class="hero-subtitle">A slower kind of puzzle, made for the in-between moments.</p>
+        <a class="hero-link" href="#puzzle">Settle in <span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="hero-caption"><span>01 / FIELD NOTES</span><span>Ancient forest, Oregon</span></div>
+      <div class="hero-index" aria-hidden="true">W—01</div>
+    </section>
+
+    <section class="workspace" id="puzzle" aria-labelledby="puzzle-heading">
+      <div class="workspace-head">
+        <div>
+          <p class="section-kicker">THE SLOW SESSION <span>—</span> NO. 01</p>
+          <h2 id="puzzle-heading">A forest in pieces</h2>
+        </div>
+        <div class="session-stats" aria-label="Puzzle statistics">
+          <div class="stat"><span class="stat-label">TIME</span><strong id="timer">00:00</strong></div>
+          <span class="stat-divider"></span>
+          <div class="stat"><span class="stat-label">MOVES</span><strong id="moves">0</strong></div>
+        </div>
+      </div>
+
+      <div class="game-layout">
+        <div class="board-wrap">
+          <div class="board-topline"><span><span class="status-dot"></span> <span id="board-status">READY WHEN YOU ARE</span></span><button class="icon-button" id="preview-button" type="button" aria-label="Show reference image" title="Show reference image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div>
+          <div class="board-stage">
+            <div id="puzzle-board" class="puzzle-board" role="grid" aria-label="Jigsaw puzzle board"></div>
+            <div class="complete-message" id="complete-message" aria-live="polite" hidden>
+              <span class="complete-leaf" aria-hidden="true">✳</span>
+              <p class="complete-kicker">PIECES BACK IN PLACE</p>
+              <h3>Beautifully done.</h3>
+              <p class="complete-time">You found your quiet in <strong id="final-time">00:00</strong> with <strong id="final-moves">0</strong> moves.</p>
+              <button class="button button-light" id="play-again" type="button">Another little pause <span aria-hidden="true">↗</span></button>
+            </div>
+          </div>
+          <div class="board-foot"><span><span class="key-icon">↔</span> Drag onto a piece, or select two to swap</span><span id="piece-count">9 PIECES</span></div>
+          <p class="game-instructions">A green check means a piece is home. Use Hint to reveal one piece and its destination. Keyboard: Tab to a piece, then press Enter or Space to select and swap.</p>
+        </div>
+
+        <aside class="controls" aria-label="Puzzle controls">
+          <div class="control-section difficulty-section">
+            <div class="control-heading"><span>01</span><h3>Choose your pace</h3></div>
+            <div class="segmented" role="group" aria-label="Puzzle difficulty">
+              <button class="level-button is-active" data-level="easy" type="button" aria-pressed="true">Easy<small>3 × 3</small></button>
+              <button class="level-button" data-level="medium" type="button" aria-pressed="false">Medium<small>4 × 4</small></button>
+              <button class="level-button" data-level="hard" type="button" aria-pressed="false">Hard<small>5 × 5</small></button>
+            </div>
+          </div>
+          <div class="control-section collection-section" id="collection">
+            <div class="control-heading"><span>02</span><h3>Today’s landscape</h3></div>
+            <div class="landscape-list" role="group" aria-label="Choose a landscape">
+              <button class="landscape-choice" data-scene="waterfall" type="button" aria-pressed="false">
+                <img src="https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Waterfalls</strong><small>Mossy falls, Iceland</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+              <button class="landscape-choice is-selected" data-scene="forest" type="button" aria-pressed="true">
+                <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Lush green forests</strong><small>Ancient forest, Oregon</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+              <button class="landscape-choice" data-scene="mountain" type="button" aria-pressed="false">
+                <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Mountains</strong><small>Alpine stillness, Dolomites</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+              <button class="landscape-choice" data-scene="coast" type="button" aria-pressed="false">
+                <img src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Beaches & oceans</strong><small>Open water, Pacific coast</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+              <button class="landscape-choice" data-scene="lake" type="button" aria-pressed="false">
+                <img src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Lakes & rivers</strong><small>Alpine waters, Italy</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+              <button class="landscape-choice" data-scene="flowers" type="button" aria-pressed="false">
+                <img src="https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Flowers & gardens</strong><small>Wild blooms, Holland</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+              <button class="landscape-choice" data-scene="wildlife" type="button" aria-pressed="false">
+                <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Wildlife</strong><small>Elephant country, Kenya</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+              <button class="landscape-choice" data-scene="sunrise" type="button" aria-pressed="false">
+                <img src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=220&q=75" alt="">
+                <span><strong>Sunrise & sunset landscapes</strong><small>First and last light, Tuscany</small></span><span class="choice-check" aria-hidden="true">✓</span>
+              </button>
+            </div>
+          </div>
+          <div class="control-actions">
+            <button id="shuffle-button" class="button button-primary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4M4 7h3.5a5 5 0 0 1 4 2l5 6a5 5 0 0 0 4 2H20M4 17h3.5a5 5 0 0 0 4-2m4-8a5 5 0 0 1 4-2H20"/></svg><span id="shuffle-label">Start a puzzle</span></button>
+            <div class="utility-actions">
+              <button id="hint-button" class="button button-secondary" type="button" aria-label="Hint: highlight a piece and its correct position"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4m-6-6.2a7 7 0 1 1 8 0c-.8.6-1.3 1.2-1.5 2.2h-5c-.2-1-.7-1.6-1.5-2.2Z"/></svg>Hint</button>
+              <button id="restart-button" class="button button-secondary" type="button" aria-label="Restart puzzle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5m-4-2a7 7 0 0 1 12-3l3 3M4 14l3 3a7 7 0 0 0 12-3"/></svg>Restart</button>
+            </div>
+            <p class="save-note"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17s-6-3.5-6-8a3.5 3.5 0 0 1 6-2.4A3.5 3.5 0 0 1 16 9c0 4.5-6 8-6 8Z"/></svg> Your progress is saved on this device.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <footer class="footer"><a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 27V14m0 8c-5-1-8-4-8-9 5 0 8 3 8 9Zm0-5c0-6 3-10 9-11 0 6-3 10-9 11Z"/></svg></span><span>WILDSCAPE</span></a><span>A small pause, wherever you are.</span><a href="#top" class="back-top">BACK TO THE TOP ↑</a></footer>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
